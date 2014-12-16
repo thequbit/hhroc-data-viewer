@@ -1,0 +1,244 @@
+<html>
+<head>
+
+	<meta charset="utf-8" />
+    <!--<meta name="viewport" content="width=device-width, initial-scale=1.0" />-->
+
+	<link rel="stylesheet" href="foundation/css/foundation.css" />
+    <link rel="stylesheet" href="foundation/css/foundation-datepicker.css" />
+
+	<link rel="stylesheet" href="site.css" />
+    
+    <link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+
+</head>
+<body>
+
+	<div class="site-wrapper">
+	
+		<div class="row">
+			<div class="small-12">
+				<div class="title-bar">
+					<div class="right right-indent">
+					<!-- TODO: Menu here
+					<h2>
+						<a href="#">Menu</a>
+					</h2>
+					-->
+					</div>
+					<h2>Geo Data Viewer <small>A GIS tool by Hacks/Hackers Rochester</small></h2>
+					
+				</div>
+			</div>
+		</div>
+	
+		
+	
+		<div id="site-contents" class="site-contents">
+	
+			<div class="row">
+				<div class="large-9 columns map-box">
+					<div class="box">
+						<div class="box-title">
+							Interactive Map
+						</div>
+						<div class="box-contents">
+							<div id="interactive-map" class="interactive-map"></div>
+						</div>
+					</div>
+				</div>
+				
+				<div class="large-3 columns">
+					
+					<div id="loading-box" class="box">
+						<div class="box-title">
+							Loading ...
+						</div>
+						<div class="box-contents">
+							The Geo Data Viewer is loading, please wait <div id="loading-dots" class="loading-dots"></div>
+						</div>
+					</div>
+					
+					<div class="box">
+						<div class="box-title">
+							Map Control
+						</div>
+						<div class="box-contents">
+							<!-- Box Contents Here -->
+						</div>
+					</div>
+					
+					<div class="box">
+						<div class="box-title">
+							Dataset Control
+						</div>
+						<div class="box-contents">
+							<!-- Box Contents Here -->
+						</div>
+					</div>
+					
+					<div class="box">
+						<div class="box-title">
+							Dataset Control
+						</div>
+						<div class="box-contents">
+							<!-- Box Contents Here -->
+						</div>
+					</div>
+					
+				</div>
+				
+			</div>
+			
+		</div>
+	
+	</div>
+
+	<script src="foundation/js/vendor/jquery.js"></script>
+       
+	<script src="foundation/js/foundation/foundation.js"></script>
+        
+	<script src="foundation/js/foundation/foundation.dropdown.js"></script>
+
+	<script src="foundation/js/vendor/modernizr.js"></script>
+
+	<script src="foundation/js/foundation-datepicker.js"></script>
+
+	<script>
+		$(document).foundation({
+			dropdown: {
+				// specify the class used for active dropdowns
+				active_class: 'open'
+			}
+		});
+	</script>
+	
+		
+	<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+
+	<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+	
+	<script>
+	
+		var mapData = {};
+	
+		$(document).ready(function() {
+			
+			// Adjust the map size when the window is resized
+			adjustMapSize();
+			window.onresize = adjustMapSize;
+			
+			var main = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {			
+				attribution: 'Map data © OpenStreetMap contributors',
+				minZoom: 10,
+				maxZoom: 16,
+			});
+			
+			window.map = L.map('interactive-map', {
+				center: [43.16412, -77.60124], //[42.6501, -76.3659],
+				zoom: 10,
+				layers: [
+					main
+				]
+			});
+		
+			// get, and load the data
+			getData();
+		
+		});
+		
+		function adjustMapSize() {
+			
+			var map = document.getElementById("interactive-map");
+			newHeight = parseInt(window.innerHeight) - 140;
+			map.style.height = newHeight + "px";
+		
+		}
+		
+		function getData() {
+		
+			dotInterval = setInterval(incLoadingDots, 500);
+		
+			// load data here
+			url = "data.json";
+			$.getJSON( url, function( response ) {
+			
+				loadData( response );
+			
+			});
+		
+			// stop loading dots, and fade out the loading box.
+			clearInterval(dotInterval);
+			$('#loading-box').fadeOut(750);
+			
+		
+		}
+		
+		function loadData(data) {
+			
+			console.log('loading map data ...');
+			console.log(data);
+			
+			var mapData = data;
+			
+			mapData.forEach( function ( incident ) {
+			
+				var marker = L.marker([incident.lat, incident.lng]).addTo(window.map);
+				
+				var popUpHtml = '';
+				popUpHtml += '<b>' + incident.event + '</b></br>'
+				popUpHtml += incident.fulladdress + '</br>'
+				popUpHtml += incident.agencyname + '</br>'
+				popUpHtml += incident.publishdate + ' ' + incident.publishtime + '</br>'
+				
+				marker.bindPopup(popUpHtml);
+				
+			});
+			
+		}
+		
+		var dotInterval = null;
+		
+		function incLoadingDots() {
+	
+			dots = $('#loading-dots').html()
+
+			console.log('dotCount = ' + dots);
+		
+			switch( dots ) {
+			
+				case '':
+					dots = '.';
+					break;
+				case '.':
+					dots = '..';
+					break;
+				case '..':
+					dots = '...';
+					break;
+				case '...':
+					dots = '....';
+					break;
+				case '....':
+					dots = '';
+					loadData();
+					break;
+				default:
+					dots = '...';
+					break;
+			
+			}
+		
+			$('#loading-dots').html(dots);
+		
+		}
+		
+		
+		
+		
+	</script>
+
+</body>
+</html>

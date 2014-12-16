@@ -1,0 +1,105 @@
+
+/*
+ *
+ *    Foundation Overrides
+ *
+ */
+
+.row {
+	max-width: none !important;
+}
+
+/*
+ *
+ *    Whole Site
+ *
+ */
+
+.site-wrapper {
+	/*background: #D7D7D7;*/
+}
+
+.site-contents {
+
+}
+
+.loading-box {
+	margin-top: 200px !important; /* overrides .box default */
+	width: 400px;
+	margin: auto;
+}
+
+.loading-dots {
+	display: inline-block;
+}
+
+.right-indent {
+	padding-right: 15px;
+}
+
+
+
+/*
+ *
+ *    Title Bar 
+ *
+ */
+
+.title-bar {
+	background: none repeat scroll 0% 0% #232323;
+	color: #FFF;
+	padding: 0.2rem;
+	border-bottom: 1px solid #CCC;
+}
+
+.title-bar h2 {
+	padding-left: 15px;
+	color: #FFF;
+	margin-bottom: 0.2rem !important; /* foundation override */
+}
+
+.title-bar h2 small {
+	color: #FFF;
+	font-size: 40% !important; /* foundation override */
+}
+
+
+/*
+ *
+ *    Box Tools
+ *
+ */
+ 
+ .box {
+	margin-top: 15px;
+	border: 1px solid #E0E0E0;
+	border-radius: 5px;
+ }
+ 
+ .box-title {
+	padding-top: 5px;
+	padding-bottom: 5px;
+	margin-left: 10px;
+	margin-right: 10px;
+	font-size: 110%;
+	border-bottom: 1px solid #E0E0E0;
+	border-top-left-radius: 5px;
+	border-top-right-radius: 5px;
+ }
+ 
+ .box-contents {
+ 
+	padding: 5px 5px 5px 10px;
+ 
+ }
+ 
+ /*
+  *
+  *    Map Tools
+  *
+  */
+  
+ .interactive-map {
+	
+ }
+ 
