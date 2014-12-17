@@ -203,7 +203,7 @@
 			// https://github.com/lvoogdt/Leaflet.awesome-markers has a better implemention of markers
 			// using http://fortawesome.github.com/Font-Awesome/
 			mapData.forEach( function ( incident ) {
-				switch(incident.event//incident.group){
+				switch(incident.event){//switch(incident.group){
 					case "Accident of motor vehicles involving unknown injury": //case "Vehicle":
 						icon = L.MakiMarkers.icon({icon: "car", color: "#A7A7B3", size: "m"});
 						break;
