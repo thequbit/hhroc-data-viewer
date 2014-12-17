@@ -7,7 +7,7 @@
 	<link rel="stylesheet" href="foundation/css/foundation.css" />
     <link rel="stylesheet" href="foundation/css/foundation-datepicker.css" />
 
-	<link rel="stylesheet" href="site.css" />
+	<link rel="stylesheet" href="site/css/site.css" />
     
     <link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
 
@@ -119,7 +119,7 @@
 	<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
 
 	<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
-	<script src="Leaflet.MakiMarkers.js"></script>
+	<script src="./site/js/Leaflet.MakiMarkers.js"></script>
 	<script>
 	
 		var mapData = {};
@@ -176,7 +176,7 @@
 			dotInterval = setInterval(incLoadingDots, 500);
 		
 			// load data here
-			url = "data.json";
+			url = "./site/data/data.json";
 			$.getJSON( url, function( response ) {
 			
 				loadData( response );
