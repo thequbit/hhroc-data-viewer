@@ -12,6 +12,7 @@
     <link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
 
 	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+	
 
 </head>
 <body>
@@ -114,12 +115,11 @@
 			}
 		});
 	</script>
-	
 		
 	<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
 
 	<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
-	
+	<script src="Leaflet.MakiMarkers.js"></script>
 	<script>
 	
 		var mapData = {};
@@ -143,7 +143,9 @@
 					main
 				]
 			});
-		
+			// Recenter the map to the users location
+			getLatLon();
+			
 			// get, and load the data
 			getData();
 		
@@ -154,7 +156,19 @@
 			var map = document.getElementById("interactive-map");
 			newHeight = parseInt(window.innerHeight) - 140;
 			map.style.height = newHeight + "px";
+		}
 		
+		// Get the user's position by IP address (or GPS for phone) or by GeoCoded input address 
+		function getLatLon(){
+			// Lat Lon Via IP Address
+			$.getJSON("http://www.telize.com/geoip",function(result){
+				lat = result.latitude;
+				lon = result.longitude;
+				map.panTo(new L.LatLng(lat, lon));
+				// Add cool Home Marker
+				var icon = L.MakiMarkers.icon({icon: "building", color: "#33CC33", size: "m"});
+				L.marker([lat, lon], {icon: icon}).addTo(map);
+			});				
 		}
 		
 		function getData() {
@@ -183,9 +197,25 @@
 			
 			var mapData = data;
 			
+			// This adds the neat markers. Probably want to switch on a JSON key like Group or Icon...
+			// Cases could be loaded from another JSON fed in per data set, so each has unique icons
+			//
+			// https://github.com/lvoogdt/Leaflet.awesome-markers has a better implemention of markers
+			// using http://fortawesome.github.com/Font-Awesome/
 			mapData.forEach( function ( incident ) {
-			
-				var marker = L.marker([incident.lat, incident.lng]).addTo(window.map);
+				switch(incident.event//incident.group){
+					case "Accident of motor vehicles involving unknown injury": //case "Vehicle":
+						icon = L.MakiMarkers.icon({icon: "car", color: "#A7A7B3", size: "m"});
+						break;
+					case "Any dumpster, grass or rubbish fire not posing an exposure problem": //case "Fire":
+						icon = L.MakiMarkers.icon({icon: "fire-station", color: "#E68A2E", size: "m"});
+						break;
+					default:
+						icon = L.MakiMarkers.icon({icon: "circle", color: "#3399FF", size: "s"});
+						break;
+				}
+					
+				var marker = L.marker([incident.lat, incident.lng], {icon: icon}).addTo(window.map);
 				
 				var popUpHtml = '';
 				popUpHtml += '<b>' + incident.event + '</b></br>'
