@@ -6,16 +6,47 @@ from sqlalchemy.exc import DBAPIError
 from .models import (
     DBSession,
     MyModel,
-    )
+)
 
+from utils import (
 
-@view_config(route_name='home', renderer='templates/mytemplate.pt')
-def my_view(request):
-    try:
-        one = DBSession.query(MyModel).filter(MyModel.name == 'one').first()
-    except DBAPIError:
-        return Response(conn_err_msg, content_type='text/plain', status_int=500)
-    return {'one': one, 'project': 'hhroc-data-viewer-server'}
+    make_response,
+
+    convert_csv_to_json,
+)
+
+import json
+
+@view_config(route_name='upload_csv.json')
+def web_uplaod_csv_json(request):
+    
+    response = {'success': False}
+    
+    if True:
+    #try:
+    
+        filename = request.POST['csv_file'].filename
+        csv_file = request.POST['csv_file'].file
+        field_names = request.POST['field_names']
+    
+        entries = convert_csv_to_json(filename, csv_file, field_names)
+     
+        response['entries'] = entries
+        response['success'] = True
+    
+    #except:
+    #    pass
+    
+    return make_response(response)
+    
+
+#@view_config(route_name='home', renderer='templates/mytemplate.pt')
+#def my_view(request):
+#    try:
+#        one = DBSession.query(MyModel).filter(MyModel.name == 'one').first()
+#    except DBAPIError:
+#        return Response(conn_err_msg, content_type='text/plain', status_int=500)
+#    return {'one': one, 'project': 'hhroc-data-viewer-server'}
 
 
 conn_err_msg = """\
