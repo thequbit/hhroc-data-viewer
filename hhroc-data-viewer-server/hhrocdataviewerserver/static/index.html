@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
 
@@ -76,6 +77,7 @@
 							Dataset Control
 						</div>
 						<div class="box-contents">
+						<input type="file" id="fileInput" name="files"/>
 							<!-- Box Contents Here -->
 						</div>
 					</div>
@@ -98,6 +100,8 @@
 	</div>
 
 	<script src="foundation/js/vendor/jquery.js"></script>
+	
+	<script src="site/js/papaparse.js"></script>
        
 	<script src="foundation/js/foundation/foundation.js"></script>
         
@@ -144,11 +148,13 @@
 				]
 			});
 			// Recenter the map to the users location
-			getLatLon();
+			getLocation(centerMap);
 			
 			// get, and load the data
-			getData();
-		
+			// getData();
+			
+			$("#fileInput").change(handleInputData);
+			
 		});
 		
 		function adjustMapSize() {
@@ -158,74 +164,166 @@
 			map.style.height = newHeight + "px";
 		}
 		
-		// Get the user's position by IP address (or GPS for phone) or by GeoCoded input address 
-		function getLatLon(){
-			// Lat Lon Via IP Address
-			$.getJSON("http://www.telize.com/geoip",function(result){
-				lat = result.latitude;
-				lon = result.longitude;
-				map.panTo(new L.LatLng(lat, lon));
-				// Add cool Home Marker
-				var icon = L.MakiMarkers.icon({icon: "building", color: "#33CC33", size: "m"});
-				L.marker([lat, lon], {icon: icon}).addTo(map);
-			});				
+		// HTML 5 Get Location
+		function getLocation(callback) {
+			if (navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(callback);
+			} else { 
+				//HTML5 Geolocation not supported, ask for zip?
+			}
 		}
+			
+		// Update Map Center
+		function centerMap(position){
+			lat = position.coords.latitude;
+			lon = position.coords.longitude;
+			map.panTo(new L.LatLng(lat, lon));
+			// Add Home Marker
+			var icon = L.MakiMarkers.icon({icon: "building", color: "#33CC33", size: "m"});
+			L.marker([lat, lon], {icon: icon}).addTo(map);
+		}				
 		
-		function getData() {
 		
+		function handleInputData(evt) {
 			dotInterval = setInterval(incLoadingDots, 500);
-		
-			// load data here
-			url = "./site/data/data.json";
-			$.getJSON( url, function( response ) {
+			var file = evt.target.files[0];
 			
-				loadData( response );
-			
+			Papa.parse(file, {
+				header: true,
+				dynamicTyping: false,
+				skipEmptyLines: true,
+				//fastMode: true,
+				complete: function(results) {
+				// Find Indicies of the Columns we want
+				// Could make this loop throught an array of re statements (nested for)
+					var f = results.meta.fields;
+					var re = /(Latitude|^Lat(?!.)|^x(?!.)|^\s+x(?!.)|^\s+x\s+(?!.)|^x\s+(?!.))/i;
+					var latCol = regExpInd(f,re);
+					
+					var re = /(Longitude|^Lon(?!.)|^y(?!.)|^\s+y(?!.)|^\s+y\s+(?!.)|^y\s+(?!.))/i;
+					var lonCol = regExpInd(f,re);
+					
+					re = /(website|^site|url)/i;
+					var webCol = regExpInd(f,re);
+					
+					re = /(phone)/i;
+					var phnCol = regExpInd(f,re);
+					
+					re = /(name)/i;
+					var nameCol = regExpInd(f,re);
+					
+					re = /(address)/i;
+					var addCol = regExpInd(f,re);
+					
+					var cols = [f[nameCol],f[addCol],f[webCol],f[phnCol],f[latCol],f[lonCol]];
+					
+					loadData(results.data,cols);
+					
+					function regExpInd(f,re){
+						for (x in f){
+							if (re.test(f[x])){
+								return x
+							}
+						}
+					}
+				}
 			});
-		
 			// stop loading dots, and fade out the loading box.
 			clearInterval(dotInterval);
 			$('#loading-box').fadeOut(750);
-			
-		
 		}
 		
-		function loadData(data) {
+		//function getData() {
+		//	
+		//	dotInterval = setInterval(incLoadingDots, 500);
+		//	
+		//	// load data here
+		//	url = "./site/data/data.json";
+		//	$.getJSON( url, function( response ) {
+		//		
+		//		loadData( response );
+		//		
+		//	});
+		//	
+		//	// stop loading dots, and fade out the loading box.
+		//	clearInterval(dotInterval);
+		//	$('#loading-box').fadeOut(750);
+		//	
+		//	
+		//}
+		
+		function loadData(data,cols) {
 			
 			console.log('loading map data ...');
-			console.log(data);
+			//console.log(data);
 			
 			var mapData = data;
+			
 			
 			// This adds the neat markers. Probably want to switch on a JSON key like Group or Icon...
 			// Cases could be loaded from another JSON fed in per data set, so each has unique icons
 			//
 			// https://github.com/lvoogdt/Leaflet.awesome-markers has a better implemention of markers
 			// using http://fortawesome.github.com/Font-Awesome/
-			mapData.forEach( function ( incident ) {
-				switch(incident.event){//switch(incident.group){
-					case "Accident of motor vehicles involving unknown injury": //case "Vehicle":
+			mapData.forEach( function (incident) {
+				//popUpHtml += '<b>' + incident.event + '</b></br>'
+				//popUpHtml += incident.fulladdress + '</br>'
+				//popUpHtml += incident.agencyname + '</br>'
+				//popUpHtml += incident.publishdate + ' ' + incident.publishtime + '</br>'
+				
+				var position = getLocation(dumpData);
+				
+				function dumpData(input){
+					DistCalc(input,incident,cols);
+					return input;
+				}
+				
+				function DistCalc(position,incident,cols) {
+					var userlat = position.coords.latitude;
+					var userlon = position.coords.longitude;
+					var lat1 = incident[cols[4]];
+					var lon1 = incident[cols[5]];
+					var MaxDist = 50;
+					
+					var R = 6371; // earth's mean radius in km
+					var dLat = (userlat-lat1) * (Math.PI / 180);
+					var dLon = (userlon-lon1) * (Math.PI / 180);
+					var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+						Math.cos(lat1* (Math.PI / 180)) * Math.cos(userlat* (Math.PI / 180)) * 
+						Math.sin(dLon/2) * Math.sin(dLon/2);
+					var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+					var dist = R * c * 0.621371; //Convert to miles
+					if (dist<MaxDist){
+						plotMarkers();	
+					}
+				}
+				
+				function plotMarkers(){
+					switch(incident.NAME){
+					case "": //Need to RegExp here
 						icon = L.MakiMarkers.icon({icon: "car", color: "#A7A7B3", size: "m"});
 						break;
-					case "Any dumpster, grass or rubbish fire not posing an exposure problem": //case "Fire":
+					case "": //Need to RegExp here
 						icon = L.MakiMarkers.icon({icon: "fire-station", color: "#E68A2E", size: "m"});
 						break;
 					default:
 						icon = L.MakiMarkers.icon({icon: "circle", color: "#3399FF", size: "s"});
 						break;
-				}
+					}
 					
-				var marker = L.marker([incident.lat, incident.lng], {icon: icon}).addTo(window.map);
-				
-				var popUpHtml = '';
-				popUpHtml += '<b>' + incident.event + '</b></br>'
-				popUpHtml += incident.fulladdress + '</br>'
-				popUpHtml += incident.agencyname + '</br>'
-				popUpHtml += incident.publishdate + ' ' + incident.publishtime + '</br>'
-				
-				marker.bindPopup(popUpHtml);
+					var marker = L.marker([incident[cols[4]], incident[cols[5]]], {icon: icon}).addTo(window.map);
+					var popUpHtml = '';
+					if (incident[cols[0]]){popUpHtml += '<b>' + incident[cols[0]] + '</b></br>'} // Name
+					if (incident[cols[1]]){popUpHtml += incident[cols[1]] + '</br>'}				// Address
+					if (incident[cols[2]]){popUpHtml += '<a href="' + incident[cols[2]] +'">Website</a>' + '</br>'} // Website
+					if (incident[cols[3]]){popUpHtml += incident[cols[3]] + '</br>'} // Phone Number
+					
+					marker.bindPopup(popUpHtml);
+				}
 				
 			});
+			
+			console.log('Done Plotting');
 			
 		}
 		
