@@ -74,19 +74,39 @@
 					
 					<div class="box">
 						<div class="box-title">
-							Dataset Control
+							Dataset Control ( Local )
 						</div>
 						<div class="box-contents">
-						<input type="file" id="fileInput" name="files"/>
+                            <input type="file" id="fileInputLocal" name="files"/>
 							<!-- Box Contents Here -->
 						</div>
 					</div>
 					
 					<div class="box">
 						<div class="box-title">
-							Dataset Control
+							Dataset Control ( Server )
 						</div>
 						<div class="box-contents">
+                            <!--
+                            <form id="fileinputserverform" method="post" action="/upload_csv.json" enctype="multipart/form-data" >
+                                <input type="file" id="fileInputServer" name="csv_file"/><br/>
+                                
+                                <input type="text" id="fieldsInputServer" name="field_names"/><br/>
+                                <input name="submitButtonServer" value="Upload" type="submit">
+                                
+                            </form>
+                            -->
+                            
+                            <form id="uploadcsv" action="/upload_csv.json" method="post" accept-charset="utf-8" enctype="multipart/form-data">
+
+                                <label for="csv_file">CSV File</label>
+                                <input id="csv_file" name="csv_file" type="file" value="" />
+                                <input id="field_names" name="field_names" type="text" value="[&quot;NAME&quot;,&quot;WEBURL&quot;,&quot;LATITUDE&quot;,&quot;LONGITUDE&quot;]"/>
+
+                                <input type="submit" value="submit" />
+                                
+                            </form>
+                            
 							<!-- Box Contents Here -->
 						</div>
 					</div>
@@ -99,8 +119,10 @@
 	
 	</div>
 
-	<script src="foundation/js/vendor/jquery.js"></script>
-	
+    <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+
+	<!--<script src="foundation/js/vendor/jquery.js"></script>-->
+
 	<script src="site/js/papaparse.js"></script>
        
 	<script src="foundation/js/foundation/foundation.js"></script>
@@ -110,6 +132,8 @@
 	<script src="foundation/js/vendor/modernizr.js"></script>
 
 	<script src="foundation/js/foundation-datepicker.js"></script>
+    
+    
 
 	<script>
 		$(document).foundation({
@@ -120,13 +144,21 @@
 		});
 	</script>
 		
-	<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+	
+
+    <!--<script src="site/js/jquery.min.js"></script>-->
+    <script src="site/js/jquery.form.min.js"></script>
 
 	<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
 	<script src="./site/js/Leaflet.MakiMarkers.js"></script>
 	<script>
 	
 		var mapData = {};
+        
+        var userPosition = {}
+        userPosition.coords = {};
+        userPosition.coords.latitude = 43.2;
+		userPosition.coords.longitude = -77.6;
 	
 		$(document).ready(function() {
 			
@@ -147,23 +179,109 @@
 					main
 				]
 			});
+            
 			// Recenter the map to the users location
 			getLocation(centerMap);
 			
 			// get, and load the data
 			// getData();
 			
-			$("#fileInput").change(handleInputData);
-			
+			$("#fileInputLocal").change(handleInputDataLocal);
+            
+            // handles the HTTP POST without redirecting the page
+            $('#uploadcsv').submit( function() {
+              
+                console.log('submitting ...');
+              
+                $(this).ajaxSubmit({
+                    //target: "#",
+                    url: "/upload_csv.json",
+                    success: function ( response ) {
+                    
+                        console.log('success!');
+                    
+                        loadServerData( response.entries );
+                    
+                    }
+                }); 
+              
+                return false;
+  
+            });
+            
+            getLocation(setLocation);
+            
 		});
 		
+        function setLocation( position ) {
+        
+            userPosition = position;
+        
+            console.log('user poistion set');
+            console.log('lat: ' + userPosition.coords.latitude + ', lng: ' + userPosition.coords.longitude);
+        
+        }
+        
+        function loadServerData( data ) {
+        
+            console.log('creating markers ...');
+        
+            data.forEach( function ( item ) {
+            
+                var maxDistance = 50; // miles
+                var distance = calculateDistance(item.LATITUDE, item.LONGITUDE);
+            
+                //console.log('lat: ' + userPosition.coords.latitude + ', lng: ' + userPosition.coords.longitude);
+                //console.log('item.LATITUDE: ' + item.LATITUDE + ', item.LONGITUDE: ' + item.LONGITUDE);
+                //console.log('distance: ' + distance);
+            
+                if ( distance < maxDistance ) {
+            
+                    icon = L.MakiMarkers.icon({icon: "circle", color: "#3399FF", size: "s"});
+                
+                    var marker = L.marker([item.LATITUDE, item.LONGITUDE], {icon: icon}).addTo(window.map);
+                        
+                    var popUpHtml = '';
+                    
+                    popUpHtml += '<a href="' + item.WEBURL + '">' + item.NAME + '<br/>';
+                    popUpHtml += item.LATITUDE + '<br/>';
+                    popUpHtml += item.LONGITUDE + '<br/>';
+                    
+                    marker.bindPopup(popUpHtml);
+                    
+                }
+            
+            });
+            
+            console.log('done with markers.');
+        
+        }
+        
+        function calculateDistance(lat1,lon1) { 
+        
+            var userlat = userPosition.coords.latitude;
+            var userlon = userPosition.coords.longitude;
+            
+            var R = 6371; // earth's mean radius in km
+            var dLat = (userlat-lat1) * (Math.PI / 180);
+            var dLon = (userlon-lon1) * (Math.PI / 180);
+            var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1* (Math.PI / 180)) * Math.cos(userlat* (Math.PI / 180)) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            var dist = R * c * 0.621371; //Convert to miles
+         
+            return dist;
+            
+        }
+        
 		function adjustMapSize() {
 			
 			var map = document.getElementById("interactive-map");
 			newHeight = parseInt(window.innerHeight) - 140;
 			map.style.height = newHeight + "px";
 		}
-		
+
 		// HTML 5 Get Location
 		function getLocation(callback) {
 			if (navigator.geolocation) {
@@ -181,10 +299,18 @@
 			// Add Home Marker
 			var icon = L.MakiMarkers.icon({icon: "building", color: "#33CC33", size: "m"});
 			L.marker([lat, lon], {icon: icon}).addTo(map);
+            
+            return position;
 		}				
 		
 		
-		function handleInputData(evt) {
+        
+        
+        
+        
+        
+        
+		function handleInputDataLocal(evt) {
 			dotInterval = setInterval(incLoadingDots, 500);
 			var file = evt.target.files[0];
 			

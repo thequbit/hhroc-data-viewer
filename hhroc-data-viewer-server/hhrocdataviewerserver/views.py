@@ -25,6 +25,10 @@ def web_uplaod_csv_json(request):
     if True:
     #try:
     
+        print "\n\n"
+        print request.POST
+        print "\n\n"
+    
         filename = request.POST['csv_file'].filename
         csv_file = request.POST['csv_file'].file
         field_names = request.POST['field_names']
